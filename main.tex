@@ -1,5 +1,13 @@
-\documentclass[uplatex]{jsarticle}
+\documentclass[uplatex]{jreport}
+\usepackage[dvipdfmx]{graphicx}
+\usepackage{ascmac}
+
 \begin{document}
+
+
+\tableofcontents
+
+\chapter{基本事項}
 \section{正規分布}
 
 \section{基礎知識}
@@ -77,7 +85,7 @@ $n$点測定した結果を評価する時によく用いられるのが平均�
 \section{確率分布}
 \subsubsection{ポワソン分布}
 \label{subsubsec:poisson}
-平均 $\bar{x}=\lambda$ 回発生する確率事象が、$x$ 回起こる確率
+平均 $\lambda$ 回発生する確率事象が、$x$ 回起こる確率
 
 \begin{table}[h]
   \centering
@@ -88,16 +96,31 @@ $n$点測定した結果を評価する時によく用いられるのが平均�
   \end{tabular}
 \end{table}
 
-\subsubsection{正規分布（ガウス分布}
+事象が起こる平均値$\lambda$が大きくなるほど、形がガウス分布に近づいていく。
+十分に大きくなると$\mu=\lambda$、$V=\lambda$のガウス分布として近似できる。
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[scale=0.5]{python/poisson_scan.pdf}
+  \caption{異なる平均値を取ったときのポワソン分布。平均$\lambda$が大きくなるほど、ガウス分布のような形状になっていくのが分かる。}
+\end{figure}
+
+\subsubsection{正規分布（ガウス分布）}
 
 \begin{table}[h]
   \centering
   \begin{tabular}{lll}
-    確率密度関数 & $f(x)=\frac{1}{\sqrt{2\pi \sigma}}e^{-\left(\frac{(x-\mu)^2}{2\sigma}\right)}$   \\
+    確率密度関数 & $f(x)=\frac{1}{\sqrt{2\pi} \sigma}e^{-\left(\frac{(x-\mu)^2}{2\sigma^2}\right)}$   \\
     期待値      & $E(x)=\mu$    \\
     分散        & $V(x)=\sigma$
   \end{tabular}
 \end{table}
+
+\begin{itembox}[l]{ガウス分布の性質その1}
+  確率変数$X$が$N(\mu,\sigma^2)$の正規分布に従うなら、$aX+b$は$N(a\mu+b,a^2\sigma^2)$の正規分布に従う
+\end{itembox}
+
+
 
 
 \section{誤差論}
@@ -236,11 +259,154 @@ $N\pm\sqrt{N}$
 
 
 
-\section{Pythonと学ぶ統計}
-\subsubsection{最小二乗法}
-python/chi\_square.py 
+\chapter{Pythonと学ぶ統計}
+\section{最小二乗法 (least square)}
+python/chi\_square.py
+$N$組のデータ$(x_i,y_i)$を測定した($i=1,...,N$)。これらを尤もらしく表すことができる関数$y=f(x)$を求めたい。
+想定する状況は、実験者が$x_i$を固定して、$y_i$を測定していく、というもの。
+各$y_i$はとある平均値の周りにふらつきを持って測定される。以下では簡単に線形近似の場合を考える。
+\begin{equation}
+  y = ax + b
+\end{equation}
+の係数を実験データから求めたい。そこで次のような値を考える。
+
+\begin{equation}
+  \Phi(a,b) = \sum_{i=1}^{N} w_i r_i^{2} = \sum_{i=1}^{n} w_i[f(x_i)-y_i]^2
+\end{equation}
+
+$r_i$は残差（residual）と呼ばれる値であり、データ点とモデル曲線との差を表している。
+$w_i$は各データ点に対する重みであり、分散の逆数に比例した値を持つ。
+仮に$w_i$が$1/\sigma_i^2$に全く等しい場合、$\Phi$は$\chi^2$に等しくなるため、最小二乗フィットはカイ自乗フィットとも呼ばれる。
 
 
+誤差を含むような実験データ値から、もっともらしい関数の形を決定する時に用いられる手法。
+$n$個のデータ点$(x_1,y_1), (x_2,y_2), ... (x_n, y_n)$をフィットする際に（関数の形は経験的に決定する）指標として用いる。
+
+\section{カイ自乗検定}
+
+\begin{equation}
+  \chi^2 = \frac{(x_1-\mu_1)}{\sigma_1^2} + \frac{(x_2-\mu_2)}{\sigma_2^2} + ... + \frac{(x_n-\mu_n)}{\sigma_n^2} = \sum_{i=1}^{n} \frac{(x_i-\mu_i)}{\sigma_i^2}
+\end{equation}
+
+カイ自乗の確率関数
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[scale=0.5]{python/ChiSquareDistribution.pdf}
+  \caption{$\chi^2$の確率分布。$chi^2$が大きくなるに従って、関数の形が右へシフトしていく。}
+\end{figure}
+
+
+\subsection{どうやってフィットの妥当性を評価するか？}
+異なる実験で$Z$ボソンの質量が測定された。これらの実験結果を尤もらしく一つの数値で表現することはできるだろうか？
+
+\begin{table}
+  \centering
+  \begin{tabular}{lll}
+    L3        & $91.161 \pm 0.013$   \\
+    OPAL      & $91.174 \pm 0.011$    \\
+    Aleph       & $91.186 \pm 0.013$ \\
+    Delphi      & $91.188 \pm 0.013$
+  \end{tabular}
+\end{table}
+
+\chapter{検定}
+真の値が$X$である量を$N$回測定して、$N$点のデータが得られたとする。
+そこから真の値を推定するにはどうすればよいか。
+
+\chapter{HEP統計}
+素粒子実験では目当ての事象をカウントして、そのカウント数$s$で理論モデルの検証を行っていく。
+その際には背景事象もあるカウント数$b$だけ含まれてしまうことから、たとえ信号事象を観測できたとしてもノイズに埋もれてしまったら発見にはつながらない。
+そこで、最終的には$b$に対して$s$が優位に大きいかどうかを議論する必要があるのだが、この手法にはいくつかの種類があり
+
+\begin{itemize}
+  \item カウンティング
+  \item シェイプフィット
+\end{itemize}
+
+が主な手法である。大層な名前がついているが特に難しいわけではないのでじっくり考えれば理解できるはず。
+信号の発見を行うには、$s=0$の仮説の$p-value$を計算することが一般的である。
+
+これは、目的の新物理は世の中に存在しない場合（$s=0$）に、実験で得られたイベント数がどれくらい普通に起きるかの目安となる。
+
+\section{p-value}
+
+\begin{equation}
+  p = \int_{\alpha}^{\infty} f(x)dx
+\end{equation}
+
+例えばガウス分布であれば、p値が小さければ小さいほど起こり得ない事象であると理解できる。
+さらにp値は もしくは Gaussian siginificance $Z$ を計算する（これらは同値）。
+
+\begin{equation}
+  Z = \Phi^{-1}(1-p)
+\end{equation}
+
+p値が$2.9\times 10^{-7}$の時$Z=5$となる。
+
+\section{$S/\sqrt{B}$の導出}
+背景事象$B$に対して信号事象$S$がどれだけ優位に多いかを表す指標であり、発見感度の議論の仕方としては最も基本的なものの一つである。
+ポワソン分布の平均値$\lambda$が大きいときにガウス分布で近似できる性質を使う。
+素粒子実験においてポワソン分布の平均値とは、「実験で観測できるとされる事象数 $s+b$」を意味する。
+ゆえに十分な統計を溜めることのできる実験では以下の近似式を用いることができる。
+
+\begin{equation}
+  f(x)
+  = \frac{1}{\sqrt{2\pi}\sigma} e^{\frac{(x-\mu)^2}{2\sigma^2}}
+  = \frac{1}{\sqrt{2\pi(s+b)}} e^{\frac{{x-(s+b)}^2}{2(s+b)^2}}
+\end{equation}
+
+ここでポワソン分布は、 $\mu = s+b$、$\sigma = \sqrt{s+b}$
+のパラメータを持つガウス分布で記述されている。
+
+この近似式を用いた場合に、信号事象がゼロの仮説（background only hypothesis）に対するp値は次のように計算できる（$s=0$）。
+
+\begin{equation}
+  p = 1 - \Phi \left(\frac{x-\mu}{\sigma} \right) = 1 - \Phi \left(\frac{x-b}{\sqrt{b}} \right)
+\end{equation}
+
+ここから、予想されるsignificance を求めることができて、
+\begin{equation}
+  \Phi \left(\frac{x-b}{\sqrt{b}} \right) = 1-p \\
+\end{equation}
+
+\begin{equation}\label{eq:signigicance_Z}
+  \frac{x-b}{\sqrt{b}} = \Phi^{-1} (1-p) = Z
+\end{equation}
+
+（\ref{eq:signigicance_Z}）式より、$x=s+b$の場合に予想されるsiginificanceは、
+
+\begin{equation}
+  \mathrm{med}[Z|s] = \frac{s}{\sqrt{b}}
+\end{equation}
+
+この式は信号事象の優位性を議論する時に広く用いられているものである。
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[scale=0.8]{python/discovery_significance.pdf}
+  \caption{予想されるsiginificanceの分布。赤線は$Z=s/\sqrt{b}$、青線は$Z=\sqrt{2\left((s+b)\log\left({1+\frac{s}{b}}\right)-s)}$から見積もった曲線。Asimov siginificanceの方が背景事象が少なくなってくる領域でも正しくexpected limitを見積もることが可能である。基本的には$s/\sqrt{b}$はそのような領域ではoverestimationになっているだけで、$s/\sqrt{b}$同士で比較する分には多少の意味はある。}
+\end{figure}
+
+
+\section{Statistical test}
+
+\begin{equation}
+  \lambda(s) = \frac{L(s,\hat{\hat{\theta}}(s))}{L(\hat{s},\hat{\theta})}
+\end{equation}
+
+\section{1ビンフィット}
+
+
+
+\section{シェイプフィット}
+1ビンではなく、分布の形を反映した統計処理を行いたい場合、こちらの手法を用いる。
+俗語的に
+\begin{itemize}
+  \item シェイプフィット
+  \item シェイプでフィットした
+\end{itemize}
+とか呼ばれる。
 
 
 
